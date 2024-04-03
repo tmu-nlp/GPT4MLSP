@@ -1,0 +1,6 @@
+[submodule "tools/MLSP_Data"]
+	path = tools/MLSP_Data
+	url = https://github.com/MLSP2024/MLSP_Data.git
+[submodule "tools/TSAR-2022-Shared-Task"]
+	path = tools/TSAR-2022-Shared-Task
+	url = https://github.com/LaSTUS-TALN-UPF/TSAR-2022-Shared-Task.git
