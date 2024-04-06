@@ -5,12 +5,11 @@ import argparse
 from tqdm import tqdm
 from ensemble import assign_prediction_scores, deduplicate_predictions, get_highest_predictions_4ranking
 
-APIKEY = "PLEASE_SET_API_KEY"
-
 
 def gpt4_generation(
+    APIKEY: str,
     system_content: str,
-    input: str, 
+    input: str,
     deploy_name: str = "gpt-4-turbo-preview",
     max_tokens: int = 256,
     temperature: float = 0.7,
@@ -21,7 +20,8 @@ def gpt4_generation(
     openai.api_key = APIKEY
 
     if use_system_content:
-        messages = [{"role": "system", "content": system_content}, {"role": "user", "content": input}]
+        messages = [{"role": "system", "content": system_content},
+                    {"role": "user", "content": input}]
     else:
         print(use_system_content)
         messages = [{"role": "user", "content": input}]
@@ -55,18 +55,27 @@ def prompt_f_rank(instruction: str, sentence: str, word: str, alternatives: str)
     return prompt
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--predictions_file', required=True, help='The path of the file with prediction results')
-    parser.add_argument('--ranking_file', required=True, help='The path of the file which the ranking results will be output')
-    parser.add_argument('--top_n', default=3, help='The number of alternative words from the top that you want to re-rank for each instance')
-    parser.add_argument('--lang', required=True, help='The language which you want to re-rank; for example, "English"')
-    parser.add_argument('--mode', choices=["ease", "similarity"], required=True, help='What you rank based on. You can choose "ease" or "similarity".')
-    parser.add_argument('--idx_start', help='The index of the instance for which you want to start re-ranking')
-    parser.add_argument('--idx_end', help='The index of the instance for which you want to end re-ranking')
+    parser.add_argument('--predictions_file', required=True,
+                        help='The path of the file with prediction results')
+    parser.add_argument('--ranking_file', required=True,
+                        help='The path of the file which the ranking results will be output')
+    parser.add_argument('--top_n', default=3, 
+                        help='The number of alternative words from the top that you want to re-rank for each instance')
+    parser.add_argument('--lang', required=True,
+                        help='The language which you want to re-rank; for example, "English"')
+    parser.add_argument('--mode', choices=["ease", "similarity"], required=True,
+                        help='What you rank based on. You can choose "ease" or "similarity".')
+    parser.add_argument('--idx_start', 
+                        help='The index of the instance for which you want to start re-ranking')
+    parser.add_argument('--idx_end', 
+                        help='The index of the instance for which you want to end re-ranking')
+    parser.add_argument( "--api_key", required=True,)
 
     args = parser.parse_args()
+    APIKEY = args.api_key
 
     with open(args.predictions_file) as f:
         reader = csv.reader(f, delimiter='\t')
@@ -90,12 +99,13 @@ if __name__=="__main__":
         if mode_ranking == 'ease':
             instruction_rank = f"I will give you a sentence, a word and alternatives for the word in the 'Sentence', 'Word' and 'Alternatives' format. Arrange the Alternatives in order of their ease. Do not generate an explanation."
         elif mode_ranking == 'similarity':
-            instruction_rank = f"I will give you a sentence, a word and alternatives for the word in the 'Sentence', 'Word' and 'Alternatives' format. Arrange the Alternatives in order of their semantic similarity to the Word, taking into account the meaning of the Words in the Sentence. Do not generate an explanation." # based on similarity
+            instruction_rank = f"I will give you a sentence, a word and alternatives for the word in the 'Sentence', 'Word' and 'Alternatives' format. Arrange the Alternatives in order of their semantic similarity to the Word, taking into account the meaning of the Words in the Sentence. Do not generate an explanation."  # based on similarity
     else:
         if mode_ranking == 'ease':
-            instruction_rank = f"I will give you a {args.lang} sentence, a word and alternatives for the word in the 'Sentence', 'Word' and 'Alternatives' format. Arrange the Alternatives in order of their ease. Do not generate an explanation." # based on ease
+            # based on ease
+            instruction_rank = f"I will give you a {args.lang} sentence, a word and alternatives for the word in the 'Sentence', 'Word' and 'Alternatives' format. Arrange the Alternatives in order of their ease. Do not generate an explanation."
         elif mode_ranking == 'similarity':
-            instruction_rank = f"I will give you a {args.lang} sentence, a word and alternatives for the word in the 'Sentence', 'Word' and 'Alternatives' format. Arrange the Alternatives in order of their semantic similarity to the Word, taking into account the meaning of the Words in the Sentence. Do not generate an explanation." # based on similarity
+            instruction_rank = f"I will give you a {args.lang} sentence, a word and alternatives for the word in the 'Sentence', 'Word' and 'Alternatives' format. Arrange the Alternatives in order of their semantic similarity to the Word, taking into account the meaning of the Words in the Sentence. Do not generate an explanation."  # based on similarity
     print(instruction_rank)
 
     with open(args.ranking_file, 'a') as f_out:
@@ -105,10 +115,12 @@ if __name__=="__main__":
             preds_all = now_content[2:]
             preds = preds_all[:top_n]
 
-            prompt_rank = prompt_f_rank(instruction=instruction_rank, sentence=sentence, word=word, alternatives=", ".join(preds))
-           
+            prompt_rank = prompt_f_rank(
+                instruction=instruction_rank, sentence=sentence, word=word, alternatives=", ".join(preds))
+
             while True:
                 outputs = gpt4_generation(
+                    APIKEY=APIKEY,
                     system_content="You are a helpful assistant.",
                     input=prompt_rank,
                 )
@@ -122,8 +134,10 @@ if __name__=="__main__":
                 output = output.replace(', ', ',').split(',')
                 weighted_predictions = assign_prediction_scores(output)
                 aggregated_predictions.extend(weighted_predictions)
-            aggregated_predictions = deduplicate_predictions(aggregated_predictions)
-            highest_scoring_predictions = get_highest_predictions_4ranking(aggregated_predictions, max_number_predictions, preds)
+            aggregated_predictions = deduplicate_predictions(
+                aggregated_predictions)
+            highest_scoring_predictions = get_highest_predictions_4ranking(
+                aggregated_predictions, max_number_predictions, preds)
 
             highest_scoring_predictions += preds_all[top_n:]
             highest_scoring_predictions.insert(0, sentence)

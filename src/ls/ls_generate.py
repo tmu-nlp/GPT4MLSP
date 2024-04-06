@@ -5,11 +5,10 @@ from tqdm import tqdm
 from ensemble import assign_prediction_scores, deduplicate_predictions, get_highest_predictions
 
 
-APIKEY = "PLEASE_SET_API_KEY"
-
 def gpt4_generation(
+    APIKEY: str,
     system_content: str,
-    input: str, 
+    input: str,
     deploy_name: str = "gpt-4-turbo-preview",
     max_tokens: int = 256,
     temperature: float = 0.7,
@@ -20,7 +19,8 @@ def gpt4_generation(
     openai.api_key = APIKEY
 
     if use_system_content:
-        messages = [{"role": "system", "content": system_content}, {"role": "user", "content": input}]
+        messages = [{"role": "system", "content": system_content},
+                    {"role": "user", "content": input}]
     else:
         print(use_system_content)
         messages = [{"role": "user", "content": input}]
@@ -53,18 +53,25 @@ def prompt_f(instruction: str, sentence: str, word: str):
     return prompt
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     max_number_predictions = 10
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--none_file', required=True, help='The path of the file which you want to predict')
-    parser.add_argument('--predictions_file', required=True, help='The path of the file which the prediction results will be output')
-    parser.add_argument('--lang', required=True, help='The language which you want to predict; for example, "English"')
-    parser.add_argument('--idx_start', help='The index of the instance for which you want to start predicting')
-    parser.add_argument('--idx_end', help='The index of the instance for which you want to end predicting')
+    parser.add_argument('--none_file', required=True,
+                        help='The path of the file which you want to predict')
+    parser.add_argument('--predictions_file', required=True,
+                        help='The path of the file which the prediction results will be output')
+    parser.add_argument('--lang', required=True,
+                        help='The language which you want to predict; for example, "English"')
+    parser.add_argument('--idx_start', 
+                        help='The index of the instance for which you want to start predicting')
+    parser.add_argument('--idx_end', 
+                        help='The index of the instance for which you want to end predicting')
+    parser.add_argument( "--api_key", required=True,)
 
     args = parser.parse_args()
-    
+    APIKEY = args.api_key
+
     with open(args.none_file) as f:
         reader = csv.reader(f, delimiter='\t')
         contents = [row for row in reader]
@@ -86,9 +93,11 @@ if __name__=="__main__":
         for now_content in tqdm(contents):
             sentence = now_content[0]
             word = now_content[1]
-            prompt = prompt_f(instruction=instruction, sentence=sentence, word=word)
+            prompt = prompt_f(instruction=instruction,
+                              sentence=sentence, word=word)
             while True:
                 outputs = gpt4_generation(
+                    APIKEY=APIKEY,
                     system_content="You are a helpful assistant.",
                     input=prompt,
                 )
@@ -98,11 +107,14 @@ if __name__=="__main__":
             # ensemble
             aggregated_predictions = list()
             for output in outputs:
-                output = output["message"]["content"].replace(', ', ',').split(',')
+                output = output["message"]["content"].replace(
+                    ', ', ',').split(',')
                 weighted_predictions = assign_prediction_scores(output)
                 aggregated_predictions.extend(weighted_predictions)
-            aggregated_predictions = deduplicate_predictions(aggregated_predictions)
-            highest_scoring_predictions = get_highest_predictions(aggregated_predictions, max_number_predictions)
+            aggregated_predictions = deduplicate_predictions(
+                aggregated_predictions)
+            highest_scoring_predictions = get_highest_predictions(
+                aggregated_predictions, max_number_predictions)
 
             highest_scoring_predictions.insert(0, sentence)
             highest_scoring_predictions.insert(1, word)

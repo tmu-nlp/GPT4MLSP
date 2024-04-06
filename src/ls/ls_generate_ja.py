@@ -10,10 +10,9 @@ from ensemble import (
 )
 from tqdm import tqdm
 
-APIKEY = "PLEASE_SET_API_KEY"
-
 
 def gpt4_generation(
+    APIKEY: str,
     system_content: str,
     input: str,
     deploy_name: str = "gpt-4-turbo-preview",
@@ -110,8 +109,13 @@ if __name__ == "__main__":
         "--idx_end",
         help="The index of the instance for which you want to end predicting",
     )
+    parser.add_argument(
+        "--api_key",
+        required=True,
+    )
 
     args = parser.parse_args()
+    APIKEY = args.api_key
 
     with open(args.none_file) as f:
         reader = csv.reader(f, delimiter="\t")
@@ -141,6 +145,7 @@ if __name__ == "__main__":
 
             while True:
                 outputs = gpt4_generation(
+                    APIKEY=APIKEY,
                     system_content="You are a helpful assistant.",
                     input=prompt,
                 )
