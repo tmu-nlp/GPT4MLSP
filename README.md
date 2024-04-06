@@ -1,4 +1,4 @@
-# MLSP2024
+# The code for TMU-HIT system submitted to [MLSP Shared Task at BEA 2024](https://sites.google.com/view/mlsp-sharedtask-2024/home)
 
 ## How to use
 
