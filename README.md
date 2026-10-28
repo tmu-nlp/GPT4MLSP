@@ -4,7 +4,15 @@
 
 ### Environment
 
-- Python version: 3.8.5
+- Python version: 3.9 or later (required by the pinned numpy, pandas, scipy and scikit-learn)
+
+### Clone with submodules
+The data (`data/MLSP_Data`) and G-Eval (`src/lcp/geval`) are git submodules.
+```
+git clone --recursive https://github.com/tmu-nlp/GPT4MLSP.git
+# or, in an existing clone
+git submodule update --init
+```
 
 ### Install libraries
 `pip install -r requirements.txt`

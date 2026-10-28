@@ -5,7 +5,7 @@ SAVE_DIR=$ROOT/predictions/ls
 API_KEY=PLEASE_SET_OPENAI_AIPKEY
 
 mkdir -p $SAVE_DIR/trial
-lang=(English JapaneseCatalan German Spanish Filipino French Italian Portuguese Sinhala)
+lang=(English Japanese Catalan German Spanish Filipino French Italian Portuguese Sinhala)
 code=(en ja ca de es fil fr it pt si)
 for ix in ${!lang[@]}
 do

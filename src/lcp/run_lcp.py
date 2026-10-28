@@ -1,5 +1,6 @@
 import argparse
 import copy
+import re
 import time
 from typing import Any, Dict, List
 
@@ -110,7 +111,12 @@ def geval_for_lcp(
             return test_df
 
         if do_parse:
-            all_complexties = [parse_output(res) for res in all_responses]
+            # parse_output returns 0 for a response that does not start with a number;
+            # mark it as None so that it is dropped instead of counted as complexity 0.0
+            all_complexties = [
+                parse_output(res) if re.search(r"^ ?[\d\.]+", res) else None
+                for res in all_responses
+            ]
         else:
             all_complexties = all_responses
 
@@ -121,7 +127,13 @@ def geval_for_lcp(
                 complexity_mapper[x] for x in all_complexties if x in complexity_mapper
             ]
 
-        all_complexties = [x for x in all_complexties if 0.0 <= x <= 1.0]
+        all_complexties = [
+            x for x in all_complexties if x is not None and 0.0 <= x <= 1.0
+        ]
+        if not all_complexties:
+            # no usable response; keep "None" so that the caller queries this instance again
+            time.sleep(time_sleep)
+            continue
 
         if use_easiness:
             all_complexties = [1 - x for x in all_complexties]
@@ -139,7 +151,7 @@ def geval_for_lcp(
 
     test_df["pred"] = predicted_complexities
     test_df["all_pred"] = predicted_all_complexities
-    if len(gold_complexities) > 0:
+    if len(gold_complexities) > 0 and "None" not in predicted_complexities:
         print(
             calculate_correlation(
                 pred_score=predicted_complexities, human_score=gold_complexities
