@@ -1,5 +1,9 @@
 from collections import defaultdict
 import csv
+import os
+
+# ls_rank_gpt4.sh writes the rankings to predictions/ls/trial at the repository root
+PRED_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "predictions", "ls", "trial")
 
 def assign_prediction_scores(predictions, start_weight: float = 5.0, decrease: float = 0.5):
     # originate from https://github.com/dennlinger/TSAR-2022-Shared-Task/blob/main/context_predictor.py
@@ -63,10 +67,10 @@ if __name__=="__main__":
     max_number_predictions = 10
     lang_id = "en"
     pred_files = [
-        f"./../predictions/trial/mlsp2024_{lang_id}_trial_pred_vfinal_rank_ease.tsv",
-        f"./../predictions/trial/mlsp2024_{lang_id}_trial_pred_vfinal_rank_similarity.tsv",
+        os.path.join(PRED_DIR, f"mlsp2024_{lang_id}_trial_pred_vfinal_rank_ease.tsv"),
+        os.path.join(PRED_DIR, f"mlsp2024_{lang_id}_trial_pred_vfinal_rank_similarity.tsv"),
     ]
-    output_file_name = f"./../predictions/trial/mlsp2024_{lang_id}_trial_pred_vfinal_rank_ensemble.tsv"
+    output_file_name = os.path.join(PRED_DIR, f"mlsp2024_{lang_id}_trial_pred_vfinal_rank_ensemble.tsv")
     pred_datas = [None for _ in range(len(pred_files))]
     pred_ensemble = list()
     for i, pred_file in enumerate(pred_files):
